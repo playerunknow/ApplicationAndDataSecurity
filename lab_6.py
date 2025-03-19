@@ -29,14 +29,13 @@ def double_transposition_encrypt(text, column_key, row_key):
     row_order = [int(x) - 1 for x in row_key]  # Преобразование ключей в индексы
     reordered_table = [['' for _ in range(cols)] for _ in range(rows)]
     for i, row_index in enumerate(row_order):
-        reordered_table[i] = table[row_index]
+        if i < rows and row_index < rows:  # Проверка на корректные индексы
+            reordered_table[i] = table[row_index]
     table = reordered_table
 
     # 5. Чтение зашифрованного текста
     encrypted_text = ''.join(''.join(row) for row in table)
-
     return encrypted_text
-
 
 def double_transposition_decrypt(encrypted_text, column_key, row_key):
     # 1. Определение размеров таблицы
@@ -56,7 +55,8 @@ def double_transposition_decrypt(encrypted_text, column_key, row_key):
     row_order = [int(x) - 1 for x in row_key]
     reordered_table = [['' for _ in range(cols)] for _ in range(rows)]
     for i, row_index in enumerate(row_order):
-        reordered_table[row_index] = table[i]
+        if i < rows and row_index < rows:  # Проверка на корректные индексы
+            reordered_table[row_index] = table[i]
     table = reordered_table
 
     # 4. Обратная перестановка столбцов
@@ -69,12 +69,9 @@ def double_transposition_decrypt(encrypted_text, column_key, row_key):
 
     # 5. Восстановление текста
     decrypted_text = ''.join(''.join(row) for row in table)
-
     # Удаление заполнителей 'X'
     decrypted_text = decrypted_text.rstrip('X')
-
     return decrypted_text
-
 
 # Пример использования
 if __name__ == "__main__":
