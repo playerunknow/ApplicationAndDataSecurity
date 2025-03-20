@@ -1,57 +1,113 @@
-def double_permutation_cipher(text, col_key, row_key):
+def double_permutation_cipher(text, col_key, row_key):                      # Функція для шифрування тексту методом подвійних перестановок
     """
     Шифрує текст за допомогою алгоритму подвійних перестановок.
 
     Args:
         text: Текст для шифрування.
-        col_key: Ключ для перестановки стовпців (список чисел).
-        row_key: Ключ для перестановки рядків (список чисел).
+        col_key: Ключ для перестановки стовпців (рядок чисел).
+        row_key: Ключ для перестановки рядків (рядок чисел).
 
     Returns:
         Зашифрований текст.
     """
     # Визначаємо розміри таблиці
-    cols = len(col_key)
-    rows = len(row_key)
+    cols = len(col_key)                                                     # Визначаємо кількість стовпців за довжиною ключа стовпців
+    rows = len(row_key)                                                     # Визначаємо кількість рядків за довжиною ключа рядків
+    size = cols * rows                                                      # Обчислюємо загальний розмір таблиці
 
     # Переконуємося, що довжина тексту відповідає розміру таблиці
-    # Якщо текст коротший, доповнюємо його пробілами
-    if len(text) < cols * rows:
-        text += ' ' * (cols * rows - len(text))
-
-    # Обрізаємо текст, якщо він довший за розмір таблиці
-    text = text[:cols * rows]
+    if len(text) < size:                                                    # Якщо текст коротший, ніж розмір таблиці
+        text += ' ' * (size - len(text))                                    # Доповнюємо текст пробілами до потрібного розміру
+    elif len(text) > size:                                                  # Якщо текст довший, ніж розмір таблиці
+        # Розділимо текст на блоки та шифруємо кожен блок окремо
+        return ''.join([double_permutation_cipher(text[i:i+size], col_key, row_key) # Рекурсивно викликаємо функцію для кожного блоку
+                        for i in range(0, len(text), size)])                # Проходимо блоками довжиною size
 
     # Заповнюємо початкову таблицю
-    original_table = []
-    for i in range(rows):
-        row = text[i * cols:(i + 1) * cols]
-        original_table.append(list(row))
+    original_table = []                                                     # Створюємо порожній список для початкової таблиці
+    for i in range(rows):                                                   # Проходимо по кожному рядку
+        row = text[i * cols:(i + 1) * cols]                                 # Вибираємо символи для поточного рядка
+        original_table.append(list(row))                                    # Додаємо рядок у вигляді списку символів
 
     # Перестановка стовпців
-    after_col_permutation = [[''] * cols for _ in range(rows)]
-    for i in range(rows):
-        for j in range(cols):
-            after_col_permutation[i][col_key.index(j + 1) - 1] = original_table[i][j]
+    after_col_permutation = [[''] * cols for _ in range(rows)]              # Створюємо порожню таблицю для результату перестановки стовпців
+    for i in range(rows):                                                   # Проходимо по кожному рядку
+        for j, key_val in enumerate(col_key):                               # Перебираємо значення ключа стовпців
+            after_col_permutation[i][j] = original_table[i][int(key_val) - 1] # Переставляємо символи згідно з ключем
 
     # Перестановка рядків
-    final_table = [[''] * cols for _ in range(rows)]
-    for i in range(rows):
-        for j in range(cols):
-            final_table[row_key.index(i + 1) - 1][j] = after_col_permutation[i][j]
+    final_table = [[''] * cols for _ in range(rows)]                        # Створюємо порожню таблицю для фінального результату
+    for i, key_val in enumerate(row_key):                                   # Перебираємо значення ключа рядків
+        for j in range(cols):                                               # Проходимо по кожному стовпцю
+            final_table[i][j] = after_col_permutation[int(key_val) - 1][j]  # Переставляємо рядки згідно з ключем
 
     # Формування зашифрованого тексту
-    encrypted_text = ''
-    for i in range(rows):
-        for j in range(cols):
-            encrypted_text += final_table[i][j]
+    encrypted_text = ''                                                     # Ініціалізуємо порожній рядок для зашифрованого тексту
+    for i in range(rows):                                                   # Проходимо по кожному рядку
+        for j in range(cols):                                               # Проходимо по кожному стовпцю
+            encrypted_text += final_table[i][j]                             # Додаємо символ до зашифрованого тексту
 
-    return encrypted_text
+    return encrypted_text                                                   # Повертаємо зашифрований текст
+
+def double_permutation_decipher(encrypted_text, col_key, row_key):           # Функція для розшифрування тексту методом подвійних перестановок
+    """
+    Розшифровує текст, зашифрований алгоритмом подвійних перестановок.
+
+    Args:
+        encrypted_text: Зашифрований текст.
+        col_key: Ключ для перестановки стовпців (рядок чисел).
+        row_key: Ключ для перестановки рядків (рядок чисел).
+
+    Returns:
+        Розшифрований текст.
+    """
+    # Визначаємо розміри таблиці
+    cols = len(col_key)                                                      # Визначаємо кількість стовпців за довжиною ключа стовпців
+    rows = len(row_key)                                                      # Визначаємо кількість рядків за довжиною ключа рядків
+    size = cols * rows                                                       # Обчислюємо загальний розмір таблиці
+
+    # Якщо зашифрований текст довший, ніж розмір таблиці, розділимо його на блоки
+    if len(encrypted_text) > size:                                           # Перевіряємо, чи текст довший ніж розмір таблиці
+        return ''.join([double_permutation_decipher(encrypted_text[i:i+size], col_key, row_key) # Рекурсивно розшифровуємо кожен блок
+                        for i in range(0, len(encrypted_text), size)])      # Проходимо блоками довжиною size
+
+    # Заповнюємо таблицю зашифрованим текстом
+    encrypted_table = []                                                     # Створюємо порожній список для таблиці зашифрованого тексту
+    for i in range(rows):                                                    # Проходимо по кожному рядку
+        row = encrypted_text[i * cols:(i + 1) * cols]                        # Вибираємо символи для поточного рядка
+        encrypted_table.append(list(row))                                    # Додаємо рядок до таблиці
+
+    # Зворотня перестановка рядків
+    after_row_permutation = [[''] * cols for _ in range(rows)]               # Створюємо порожню таблицю для результату зворотної перестановки рядків
+    for i in range(rows):                                                    # Проходимо по кожному рядку
+        for j in range(cols):                                                # Проходимо по кожному стовпцю
+            after_row_permutation[int(row_key[i]) - 1][j] = encrypted_table[i][j] # Відновлюємо порядок рядків згідно з ключем
+
+    # Зворотня перестановка стовпців
+    original_table = [[''] * cols for _ in range(rows)]                      # Створюємо порожню таблицю для оригінального тексту
+    for i in range(rows):                                                    # Проходимо по кожному рядку
+        for j in range(cols):                                                # Проходимо по кожному стовпцю
+            original_table[i][int(col_key[j]) - 1] = after_row_permutation[i][j] # Відновлюємо порядок стовпців згідно з ключем
+
+    # Формування розшифрованого тексту
+    decrypted_text = ''                                                      # Ініціалізуємо порожній рядок для розшифрованого тексту
+    for i in range(rows):                                                    # Проходимо по кожному рядку
+        for j in range(cols):                                                # Проходимо по кожному стовпцю
+            decrypted_text += original_table[i][j]                           # Додаємо символ до розшифрованого тексту
+
+    return decrypted_text.rstrip()                                           # Повертаємо розшифрований текст без пробілів у кінці
 
 # Приклад використання
-text_to_encrypt = "Диннік Михайло Андрійович, група 12-341"
-col_key = [2, 4, 1, 3]  # Ключ для перестановки стовпців
-row_key = [4, 1, 2, 3]  # Ключ для перестановки рядків
+if __name__ == "__main__":                                                   # Перевіряємо, чи скрипт запущено як основний файл
+    # Вихідний текст
+    text_to_encrypt = "Диннік Михайло Андрійович, група 12-341"             # Задаємо текст для шифрування
+    column_key = "2413"                                                      # Задаємо ключ для перестановки стовпців
+    row_key = "4123"                                                         # Задаємо ключ для перестановки рядків
 
-encrypted_text = double_permutation_cipher(text_to_encrypt, col_key, row_key)
-print("Зашифрований текст за алгоритмом подвійних перестановок:", encrypted_text)
+    # Шифрування
+    encrypted_text = double_permutation_cipher(text_to_encrypt, column_key, row_key) # Викликаємо функцію шифрування
+    print("Зашифрований текст:", encrypted_text)                             # Виводимо зашифрований текст
+
+    # Розшифрування
+    decrypted_text = double_permutation_decipher(encrypted_text, column_key, row_key) # Викликаємо функцію розшифрування
+    print("Розшифрований текст:", decrypted_text)                            # Виводимо розшифрований текст
