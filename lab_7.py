@@ -1,43 +1,62 @@
-def gronsfeld_cipher(text, key):
+def gronsfeld_cipher(text, key, decrypt=False):  # Функція шифрування/дешифрування методом Гронсфельда
     """
-    Шифрує текст за допомогою шифру Гронсфельда.
+    Функція шифрування/дешифрування тексту за шифром Гронсфельда.
 
     Args:
-        text: Текст для шифрування.
+        text: Вхідний текст для обробки.
         key: Числовий ключ у вигляді рядка.
+        decrypt: Якщо True, виконується дешифрування.
 
     Returns:
-        Зашифрований текст.
+        Оброблений текст (зашифрований або розшифрований).
     """
+    # Алфавіт з лекції, включаючи пробіл (_)
+    alphabet = "АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ_"  # Визначення українського алфавіту великими літерами з пробілом
+    alphabet_lower = alphabet.lower()  # Створення алфавіту у нижньому регістрі
 
-    # Український алфавіт
-    ukr_uppercase = "АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ"
-    ukr_lowercase = "абвгґдеєжзиіїйклмнопрстуфхцчшщьюя"
+    # Розширюємо ключ до довжини тексту
+    extended_key = ""                                                           # Ініціалізація порожнього рядка для розширеного ключа
+    for i in range(len(text)):                                                  # Цикл по довжині вхідного тексту
+        extended_key += key[i % len(key)]                                       # Додавання символу ключа за модулем довжини ключа
 
-    encrypted_text = ""
-    key_length = len(key)
+    processed_text = ""                                                         # Ініціалізація порожнього рядка для обробленого тексту
+    steps = []                                                                  # Ініціалізація порожнього списку для зберігання кроків обробки
 
-    for i, char in enumerate(text):
-        shift = int(key[i % key_length])  # Отримуємо зсув з ключа
+    for i, char in enumerate(text):                                             # Цикл по індексу та символу вхідного тексту
+        shift = int(extended_key[i])                                            # Перетворення символу ключа в ціле число для зсуву
+        if decrypt:  # Перевірка режиму дешифрування
+            shift = -shift  # Інвертуємо зсув для дешифрування
 
-        if char in ukr_uppercase:
-            index = ukr_uppercase.find(char)
-            encrypted_text += ukr_uppercase[(index + shift) % len(ukr_uppercase)]
-        elif char in ukr_lowercase:
-            index = ukr_lowercase.find(char)
-            encrypted_text += ukr_lowercase[(index + shift) % len(ukr_lowercase)]
-        elif '0' <= char <= '9':  # Шифруємо цифри
-            shifted_char = str((int(char) + shift) % 10)
-            encrypted_text += shifted_char
-        else:
-            encrypted_text += char  # Залишаємо інші символи без змін
+        if char in alphabet:  # Перевірка, чи символ є великою літерою українського алфавіту
+            index = alphabet.find(char)  # Знаходження позиції символу в алфавіті
+            new_index = (index + shift) % len(alphabet)  # Обчислення нової позиції з урахуванням зсуву та довжини алфавіту
+            processed_text += alphabet[new_index]  # Додавання нового символу до обробленого тексту
+            steps.append(f"Символ '{char}' (позиція {index}) зсувається на {shift} -> '{alphabet[new_index]}' (позиція {new_index})")  # Додавання інформації про крок обробки
+        elif char in alphabet_lower:  # Перевірка, чи символ є малою літерою українського алфавіту
+            index = alphabet_lower.find(char)  # Знаходження позиції символу в алфавіті нижнього регістру
+            new_index = (index + shift) % len(alphabet_lower)  # Обчислення нової позиції з урахуванням зсуву та довжини алфавіту
+            processed_text += alphabet_lower[new_index]  # Додавання нового символу до обробленого тексту
+            steps.append(f"Символ '{char}' (позиція {index}) зсувається на {shift} -> '{alphabet_lower[new_index]}' (позиція {new_index})")  # Додавання інформації про крок обробки
+        else:  # Обробка символів, що не входять до алфавіту
+            processed_text += char  # Залишаємо символ без змін
+            steps.append(f"Символ '{char}' не в алфавіті, залишається без змін")  # Додавання інформації про крок обробки
 
-    return encrypted_text
+    return processed_text, steps  # Повертаємо оброблений текст та список кроків обробки
 
 # Приклад використання
-text_to_encrypt = "Диннік Михайло Андрійович, група 12-341"
-key = "1945"
+text_to_encrypt = "Диннік Михайло Андрійович, група 12-341"  # Вхідний текст для шифрування
+key = "1945"  # Ключ шифрування
 
-encrypted_text = gronsfeld_cipher(text_to_encrypt, key)
-print("не зашифрований текст:", text_to_encrypt)
-print("Зашифрований текст:", encrypted_text)
+encrypted_text, encryption_steps = gronsfeld_cipher(text_to_encrypt, key)  # Виклик функції шифрування та отримання результатів
+decrypted_text, decryption_steps = gronsfeld_cipher(encrypted_text, key, decrypt=True)  # Виклик функції дешифрування та отримання результатів
+
+print("Вхідний текст:", text_to_encrypt)  # Виведення вхідного тексту
+print("Ключ:", key)  # Виведення ключа
+print("\nДеталі шифрування:")  # Виведення заголовка для деталей шифрування
+for step in encryption_steps:  # Цикл по кроках шифрування
+    print(step)  # Виведення кожного кроку шифрування
+print("\nЗашифрований текст:", encrypted_text)  # Виведення зашифрованого тексту
+print("\nДеталі дешифрування:")  # Виведення заголовка для деталей дешифрування
+for step in decryption_steps:  # Цикл по кроках дешифрування
+    print(step)  # Виведення кожного кроку дешифрування
+print("\nРозшифрований текст:", decrypted_text)  # Виведення розшифрованого тексту
