@@ -120,10 +120,12 @@ SHIFT_LEFT = [1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1]
 
 def string_to_bit_array(text):
     """Перетворює текст у масив бітів (в бінарному форматі)"""
+    # Перетворюємо текст у байти з кодуванням utf-8
+    text_bytes = text.encode('utf-8')
     array = []
-    for char in text:
-        # Перетворення символу у 8-бітовий код
-        bin_val = bin(ord(char))[2:].zfill(8)
+    for byte in text_bytes:
+        # Перетворення байту у 8-бітовий код
+        bin_val = bin(byte)[2:].zfill(8)
         # Додавання кожного біту у масив
         for bit in bin_val:
             array.append(int(bit))
@@ -131,12 +133,26 @@ def string_to_bit_array(text):
 
 def bit_array_to_string(array):
     """Перетворює масив бітів у текст"""
-    result = ""
+    # Збираємо байти з бітів
+    bytes_array = bytearray()
     for i in range(0, len(array), 8):
-        # Беремо 8 бітів і перетворюємо їх у символ
+        # Беремо 8 бітів і перетворюємо їх у байт
         byte = array[i:i+8]
-        result += chr(int(''.join([str(bit) for bit in byte]), 2))
-    return result
+        if len(byte) == 8:  # Перевіряємо, що маємо повний байт
+            byte_val = int(''.join([str(bit) for bit in byte]), 2)
+            bytes_array.append(byte_val)
+
+    # Декодуємо байти назад у текст з utf-8
+    try:
+        return bytes_array.decode('utf-8')
+    except UnicodeDecodeError:
+        # Якщо виникає помилка декодування, повертаємо доступну частину або порожній рядок
+        for i in range(len(bytes_array), 0, -1):
+            try:
+                return bytes_array[:i].decode('utf-8')
+            except UnicodeDecodeError:
+                continue
+        return ""
 
 def permute(block, table):
     """Виконує перестановку бітів згідно з таблицею"""
@@ -262,7 +278,8 @@ def des_encrypt(text, key):
 
     # Доповнення масиву до кратності 64
     if len(text_bit_array) % 64 != 0:
-        text_bit_array = text_bit_array + [0] * (64 - (len(text_bit_array) % 64))
+        padding_length = 64 - (len(text_bit_array) % 64)
+        text_bit_array = text_bit_array + [0] * padding_length
 
     result = []
 
@@ -273,23 +290,17 @@ def des_encrypt(text, key):
 
     return result
 
-def des_decrypt(cipher_text, key):
+def des_decrypt(cipher_bits, key):
     """Дешифрує текст, зашифрований алгоритмом DES"""
     # Генеруємо підключі (використовуємо їх у зворотному порядку для дешифрування)
     subkeys = generate_subkeys(key)
     subkeys.reverse()
 
-    # Конвертація шифротексту в бітовий масив (якщо це не масив)
-    if isinstance(cipher_text, str):
-        cipher_bit_array = string_to_bit_array(cipher_text)
-    else:
-        cipher_bit_array = cipher_text
-
     result = []
 
     # Обробка шифротексту блоками по 64 біти
-    for i in range(0, len(cipher_bit_array), 64):
-        block = cipher_bit_array[i:i+64]
+    for i in range(0, len(cipher_bits), 64):
+        block = cipher_bits[i:i+64]
         result.extend(des_encrypt_block(block, subkeys))
 
     # Видалення доповнення (якщо є)
@@ -302,15 +313,16 @@ def print_bits_as_hex(bits):
     """Перетворює масив бітів у шістнадцятковий формат для відображення"""
     hex_output = ""
     for i in range(0, len(bits), 4):
-        nibble = bits[i:i+4]
-        hex_digit = hex(int(''.join([str(bit) for bit in nibble]), 2))[2:]
-        hex_output += hex_digit
+        if i + 4 <= len(bits):  # Перевіряємо, що маємо повний ніббл
+            nibble = bits[i:i+4]
+            hex_digit = hex(int(''.join([str(bit) for bit in nibble]), 2))[2:]
+            hex_output += hex_digit
     return hex_output
 
 # Демонстрація роботи алгоритму
 def demonstrate_des():
-    # Використовуємо ваші дані (замість "ПІБ" вставте своє прізвище, ім'я та по-батькові)
-    plaintext = "ПІБ студента, група"
+    # Використовуємо ваші дані
+    plaintext = "Диннік Михайло Андрійович, група 12-341"
     # Ключ (рекомендується 8 символів для 64-бітного ключа)
     key = "secretky"
 
@@ -331,16 +343,16 @@ def demonstrate_des():
     print("\nДетальний аналіз першого раунду:")
     # Конвертація тексту та ключа у бітові масиви
     text_bits = string_to_bit_array(plaintext)
+    # Беремо перші 64 біти для аналізу
     if len(text_bits) < 64:
         text_bits = text_bits + [0] * (64 - len(text_bits))
-    elif len(text_bits) > 64:
-        text_bits = text_bits[:64]
+    block_bits = text_bits[:64]
 
     # Генерація підключів
     subkeys = generate_subkeys(key)
 
     # Початкова перестановка
-    initial_permutation = permute(text_bits, IP)
+    initial_permutation = permute(block_bits, IP)
     print(f"Після початкової перестановки (IP): {print_bits_as_hex(initial_permutation)}")
 
     # Розділення на ліву і праву частини
